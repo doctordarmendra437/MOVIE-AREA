@@ -1,15 +1,8 @@
-FROM python:3.10.8-slim-buster
+FROM python:3.10-slim
 
-WORKDIR /Jisshu-filter-bot
-RUN chmod 777 /Jisshu-filter-bot
+WORKDIR /app
+COPY . /app
 
-RUN apt update && apt install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-RUN chmod +x start.sh
-
-CMD ["bash", "start.sh"]
+CMD ["python", "bot.py"]
