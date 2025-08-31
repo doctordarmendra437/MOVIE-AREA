@@ -16,8 +16,8 @@ def is_enabled(value, default):
 
 # Main
 SESSION = environ.get("SESSION", "Movie_area")
-API_ID = int(environ.get("API_ID", "20035684"))
-API_HASH = environ.get("API_HASH", "987a8b7ee93d55e76bb29fce4d8ebf52")
+API_ID = int(environ.get("API_ID", ""))
+API_HASH = environ.get("API_HASH", "")
 BOT_TOKEN = environ.get("BOT_TOKEN", "")
 PORT = environ.get("PORT", "8080")
 
@@ -39,8 +39,8 @@ CHANNELS = [
 AUTH_CHANNEL = int(environ.get("AUTH_CHANNEL", "-1002918425042"))
 AUTH_REQ_CHANNEL = int(environ.get("AUTH_REQ_CHANNEL", "-1002804180914"))
 LOG_CHANNEL = int(environ.get("LOG_CHANNEL", "-1002984344864"))
-LOG_API_CHANNEL = int(environ.get("LOG_API_CHANNEL", "-1002984344864"))
-LOG_VR_CHANNEL = int(environ.get("LOG_VR_CHANNEL", "-1002984344864"))
+LOG_API_CHANNEL = int(environ.get("LOG_API_CHANNEL", "0"))
+LOG_VR_CHANNEL = int(environ.get("LOG_VR_CHANNEL", "0"))
 
 # MongoDB
 DATABASE_URI = environ.get("DATABASE_URI", "mongodb+srv://riteshkumarsingh:iX9Eeca9iRTH3buu@cluster0.sqrcqji.mongodb.net/moviecollection?retryWrites=true&w=majority&appName=Cluster0")
