@@ -1,14 +1,4 @@
-pyrofork==2.3.45
+pyrogram==2.0.106
 tgcrypto
-pymongo[srv]==4.5.0
-motor
-marshmallow==3.20.1
-umongo
-git+https://github.com/Joelkb/cinemagoer
-search_engine_parser
-wget
-aiofiles
-ffmpeg-python
-ffmpeg
+pymongo
 requests
-flask
