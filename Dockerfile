@@ -23,5 +23,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Run your app (adjust if different)
-CMD ["python", "bot.py"]
+# Start your bot automatically
+CMD ["python3", "bot.py"]
