@@ -1,17 +1,22 @@
-# Use official Python slim image
 FROM python:3.10-slim
 
-# Set working directory
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    ffmpeg wget gcc supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set work directory
 WORKDIR /app
 
-# Copy requirements first (better caching)
+# Install python dependencies
 COPY requirements.txt .
-
-# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all project files
+# Copy project files
 COPY . .
 
-# Command to run bot
-CMD ["python", "bot.py"]
+# Copy supervisor config
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Start both processes
+CMD ["/usr/bin/supervisord"]
