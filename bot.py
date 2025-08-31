@@ -1,101 +1,77 @@
-import sys
-import glob
-import importlib
-from pathlib import Path
-from pyrogram import idle
-import logging
-import logging.config
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pymongo import MongoClient
+from info import API_ID, API_HASH, BOT_TOKEN, DATABASE_URI, DATABASE_NAME, OWNER_USERNAME, SUPPORT_CHAT, MOVIE_GROUP_LINK
+from utils import shorten_url
 
-# Get logging configurations
-logging.config.fileConfig("logging.conf")
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
-logging.getLogger("imdbpy").setLevel(logging.ERROR)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Bot client
+bot = Client(
+    "MovieBot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
 )
-logging.getLogger("aiohttp").setLevel(logging.ERROR)
-logging.getLogger("aiohttp.web").setLevel(logging.ERROR)
+
+# MongoDB connection
+mongo = MongoClient(DATABASE_URI)
+db = mongo[DATABASE_NAME]
+files_col = db["movies"]  # collection name
 
 
-from pyrogram import __version__
-from pyrogram.raw.all import layer
-from database.ia_filterdb import Media
-from database.users_chats_db import db
-from info import *
-from utils import temp
-from Script import script
-from datetime import date, datetime
-import pytz
-from aiohttp import web
-from plugins import web_server, check_expired_premium
-import pyrogram.utils
-import asyncio
-from Jisshu.bot import JisshuBot
-from Jisshu.util.keepalive import ping_server
-from Jisshu.bot.clients import initialize_clients
-
-ppath = "plugins/*.py"
-files = glob.glob(ppath)
-JisshuBot.start()
-loop = asyncio.get_event_loop()
-
-pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
-
-
-async def Jisshu_start():
-    print("\n")
-    print("Credit - Telegram @JISSHU_BOTS")
-    bot_info = await JisshuBot.get_me()
-    JisshuBot.username = bot_info.username
-    await initialize_clients()
-    for name in files:
-        with open(name) as a:
-            patt = Path(a.name)
-            plugin_name = patt.stem.replace(".py", "")
-            plugins_dir = Path(f"plugins/{plugin_name}.py")
-            import_path = "plugins.{}".format(plugin_name)
-            spec = importlib.util.spec_from_file_location(import_path, plugins_dir)
-            load = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(load)
-            sys.modules["plugins." + plugin_name] = load
-            print("JisshuBot Imported => " + plugin_name)
-    if ON_HEROKU:
-        asyncio.create_task(ping_server())
-    b_users, b_chats = await db.get_banned()
-    temp.BANNED_USERS = b_users
-    temp.BANNED_CHATS = b_chats
-    await Media.ensure_indexes()
-    me = await JisshuBot.get_me()
-    temp.ME = me.id
-    temp.U_NAME = me.username
-    temp.B_NAME = me.first_name
-    temp.B_LINK = me.mention
-    JisshuBot.username = "@" + me.username
-    JisshuBot.loop.create_task(check_expired_premium(JisshuBot))
-    logging.info(
-        f"{me.first_name} with for Pyrogram v{__version__} (Layer {layer}) started on {me.username}."
+@bot.on_message(filters.command("start"))
+async def start_cmd(client, message):
+    await message.reply_text(
+        f"👋 Hello {message.from_user.mention}!\n\n"
+        "I am your Movie Bot 🎬\n\n"
+        "🔎 Send me the name of any movie and I’ll fetch it for you with links.",
+        reply_markup=InlineKeyboardMarkup(
+            [[
+                InlineKeyboardButton("📢 Updates", url=MOVIE_GROUP_LINK),
+                InlineKeyboardButton("👨‍💻 Owner", url=f"https://t.me/{OWNER_USERNAME}")
+            ],
+            [
+                InlineKeyboardButton("💬 Support", url=SUPPORT_CHAT)
+            ]]
+        )
     )
-    logging.info(script.LOGO)
-    tz = pytz.timezone("Asia/Kolkata")
-    today = date.today()
-    now = datetime.now(tz)
-    time = now.strftime("%H:%M:%S %p")
-    await JisshuBot.send_message(
-        chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(me.mention, today, time)
-    )
-    await JisshuBot.send_message(
-        chat_id=SUPPORT_GROUP, text=f"<b>{me.mention} ʀᴇsᴛᴀʀᴛᴇᴅ 🤖</b>"
-    )
-    app = web.AppRunner(await web_server())
-    await app.setup()
-    bind_address = "0.0.0.0"
-    await web.TCPSite(app, bind_address, PORT).start()
-    await idle()
 
 
-if __name__ == "__main__":
-    try:
-        loop.run_until_complete(Jisshu_start())
-    except KeyboardInterrupt:
-        logging.info("Service Stopped Bye 👋")
+@bot.on_message(filters.text & ~filters.command(["start"]))
+async def search_movie(client, message):
+    query = message.text.strip()
+
+    if len(query) < 3:
+        return await message.reply_text("⚠️ Please enter at least 3 characters to search.")
+
+    results = files_col.find({"file_name": {"$regex": query, "$options": "i"}}).limit(10)
+
+    if results.count() == 0:
+        return await message.reply_text("❌ No movies found, try another name.")
+
+    buttons = []
+    text = f"🔎 Results for: **{query}**\n\n"
+
+    for file in results:
+        file_name = file.get("file_name", "Unknown File")
+        chat_id = file.get("chat_id")
+        msg_id = file.get("msg_id")
+
+        if chat_id and msg_id:
+            # Telegram message link
+            movie_link = f"https://t.me/c/{str(chat_id)[4:]}/{msg_id}"
+            short_link = shorten_url(movie_link)
+
+            buttons.append([InlineKeyboardButton(file_name[:50], url=short_link)])
+
+    reply_markup = InlineKeyboardMarkup(buttons)
+
+    await message.reply_text(
+        text,
+        reply_markup=reply_markup,
+        disable_web_page_preview=True
+    )
+
+
+print("🤖 Movie Bot is running...")
+bot.run()
