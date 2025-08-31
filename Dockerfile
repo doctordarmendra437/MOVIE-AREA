@@ -1,27 +1,25 @@
-# Use official Python base image
 FROM python:3.10-slim
 
-# Prevent interactive prompts during apt install
+# Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies (ffmpeg + wget + gcc for some Python libs)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    git \
     ffmpeg \
-    wget \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
-# Copy requirements first (better caching)
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
 
-# Start your bot automatically
-CMD ["python3", "bot.py"]
+# Default command to run your bot
+CMD ["python", "bot.py"]
