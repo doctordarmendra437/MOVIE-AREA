@@ -1,9 +1,7 @@
 import re
-from os import environ
-from Script import script
+import re
 
 id_pattern = re.compile(r"^.\d+$")
-
 
 def is_enabled(value, default):
     if str(value).lower() in ["true", "yes", "1", "enable", "y"]:
@@ -13,21 +11,24 @@ def is_enabled(value, default):
     else:
         return default
 
-
 # Main
-SESSION = environ.get("SESSION", "Movie_area")
-API_ID = int(environ.get("API_ID", "20035684"))
-API_HASH = environ.get("API_HASH", "987a8b7ee93d55e76bb29fce4d8ebf52")
-BOT_TOKEN = environ.get("BOT_TOKEN", "8315587555:AAEB8hCCcXn_FN6SHWyUA_ZWuMWcZf6V8ts")
-PORT = environ.get("PORT", "8080")
+SESSION = "Media_search"
+API_ID = 20035684
+API_HASH = "987a8b7ee93d55e76bb29fce4d8ebf52"
+BOT_TOKEN = "8315587555:AAEB8hCCcXn_FN6SHWyUA_ZWuMWcZf6V8ts"
+PORT = 8080
 
 # Owners
-ADMINS = [
-    int(admin) if id_pattern.search(admin) else admin
-    for admin in environ.get("ADMINS", "5234918257").split()
-]
-OWNER_USERNAME = environ.get("OWNER_USERNAME", "riteshkumarsingh437")
-USERNAME = environ.get("USERNAME", "riteshkumarsingh437")
+ADMINS = [5234918257]
+OWNER_USERNAME = "IM_JISSHU"
+
+# MongoDB
+DATABASE_URI = "mongodb+srv://riteshkumarsingh:iX9Eeca9iRTH3buu@cluster0.sqrcqji.mongodb.net/moviecollection?retryWrites=true&w=majority&appName=Cluster0"
+DATABASE_NAME = "moviecollection"
+
+# Other configs
+SUPPORT_GROUP = -1001864434358
+MOVIE_UPDATE_CHANNEL = -1001864434358
 
 # Database Channel
 CHANNELS = [
