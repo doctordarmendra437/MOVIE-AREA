@@ -1,25 +1,33 @@
+# Use official lightweight Python image
 FROM python:3.10-slim
 
-# Prevent interactive prompts
-ENV DEBIAN_FRONTEND=noninteractive
+# Prevent Python from writing pyc files
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Install system dependencies
+# Install system dependencies (needed for tgcrypto, ffmpeg, etc.)
 RUN apt-get update && apt-get install -y \
-    git \
     ffmpeg \
-    build-essential \
- && rm -rf /var/lib/apt/lists/*
+    gcc \
+    libssl-dev \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Set workdir
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
+# Copy requirements first (better caching)
 COPY requirements.txt .
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Upgrade pip + install deps
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -r requirements.txt
 
 # Copy project files
 COPY . .
 
-# Default command to run your bot
+# Expose port (Render expects this)
+EXPOSE 8080
+
+# Start command (update if your entrypoint is different)
 CMD ["python", "bot.py"]
